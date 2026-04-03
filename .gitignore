@@ -78,9 +78,3 @@ verify_*.py
 static/
 /apps/dsa-desktop/dist/
 /apps/dsa-desktop/node_modules/
- 
-# Project Logs and Plans (Untracked)
-changelog.md
-test-log.md
-test-plan.md
-集成测试计划.md
