@@ -53,10 +53,21 @@
 5. **共识**: 将加权后的建议喂给 `Consensus_Agent`（也是一个 gemini-cli 实例），得出最终 `[Strong Buy, Buy, Hold, Sell, Strong Sell]`。
 6. **归档**: 将今日各专家的原始意见存入 DB，等待 5 个交易日后回填真实涨跌并计算胜率。
 
----
+## 4. 已实现的技术细节 (v4.1)
 
-## 3. WebUI 展现层改造
-在前端界面新增：
-*   **多方博弈面板**：雷达图或投票柱状图，展示各大师的立场。
-*   **胜率榜单**：展示本月预测最准的“分析师”。
-*   **深度报告**：保留共识引擎的总结性文字。
+### 4.1 核心流程
+1. **[路由]** `GeminiAnalyzer.analyze()` 识别以 `ensemble/` 为前缀的 `LITELLM_MODEL` 配置。
+2. **[权重]** 从 `workspace/analyst_performance.db` (SQLite) 提取大师们的历史胜率，计算动态权重。
+3. **[并发]** 通过 `asyncio.create_subprocess_exec` 并发拉起 5 位专家的 `gemini-cli` 进程。
+4. **[聚合]** 由雷·达里奥（Ray Dalio）作为秘书长，主持“想法精英管理”讨论，得出最终裁决。
+5. **[映射]** 将聚合结果映射回 `AnalysisResult` 标准数据类，确保系统兼容性。
+
+### 4.2 专家战绩演进机制
+* **预测存入**：每次分析结束，5位大师的 Signal 被实时存入 `track_record`。
+* **回填打分**：执行 `scripts/backfill_performance.py` 可自动回填实际表现。
+* **权重惩罚**：低胜率专家的 `confidence` 在达里奥的 Prompt 中会被打折展示。
+
+---
+## 5. 下一步规划
+* **WebUI 改造**：在前端展示专家委员会的雷达图与具体意见分歧。
+* **数据源增强**：将 A 股财务报表数据更深度地喂给基本面大师。

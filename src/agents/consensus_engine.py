@@ -39,13 +39,14 @@ class RayDalioAggregator:
     }
     """
 
-    def prepare_consensus_prompt(self, ticker: str, expert_reports: Dict[str, Dict[str, Any]]) -> str:
+    def prepare_consensus_prompt(self, ticker: str, expert_reports: Dict[str, Dict[str, Any]], weights: Dict[str, float] = None) -> str:
         """
-        将 5 位专家的原始报告拼接到达里奥的 User Prompt 中。
+        将 5 位专家的原始报告拼接到达里奥的 User Prompt 中，并附带历史胜率权重。
         """
         reports_context = ""
         for expert_id, report in expert_reports.items():
-            reports_context += f"【{expert_id} 的报告】\n"
+            weight = weights.get(expert_id, 1.0) if weights else 1.0
+            reports_context += f"【{expert_id} 的报告】 (历史可信度权重: {weight})\n"
             reports_context += f"- 信号: {report.get('signal')}\n"
             reports_context += f"- 置信度: {report.get('confidence')}%\n"
             reports_context += f"- 理由: {report.get('reasoning')}\n\n"
@@ -53,7 +54,8 @@ class RayDalioAggregator:
         user_content = f"""
         标的：{ticker}
         
-        现在，委员会的 5 位大师已经提交了各自的独立分析报告：
+        现在，委员会的 5 位大师已经提交了各自的独立分析报告。注意！每位大师后面括号里的『历史可信度权重』是你最核心的参考依据。
+        权重越高，代表该专家最近的预测越准。
         
         {reports_context}
         
