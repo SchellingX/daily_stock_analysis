@@ -77,6 +77,51 @@ class PerformanceTracker:
                 
         return weights
 
+    def get_analyst_performance(self) -> List[Dict[str, Any]]:
+        """
+        获取大师们的详细战绩统计。
+        """
+        performance = []
+        analysts = {
+            "warren_buffett": "巴菲特",
+            "li_lu": "李录",
+            "paul_tudor_jones": "保罗·都铎·琼斯",
+            "jensen_huang": "黄仁勋",
+            "nassim_taleb": "塔勒布"
+        }
+        
+        with sqlite3.connect(self.db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            
+            for aid, name in analysts.items():
+                # 总预测数
+                cursor.execute("SELECT COUNT(*) FROM track_record WHERE analyst_id = ?", (aid,))
+                total = cursor.fetchone()[0]
+                
+                # 已结算数
+                cursor.execute("SELECT COUNT(*) FROM track_record WHERE analyst_id = ? AND is_correct IS NOT NULL", (aid,))
+                settled = cursor.fetchone()[0]
+                
+                # 胜场数
+                cursor.execute("SELECT COUNT(*) FROM track_record WHERE analyst_id = ? AND is_correct = 1", (aid,))
+                wins = cursor.fetchone()[0]
+                
+                accuracy = (wins / settled) if settled > 0 else 0.5
+                
+                performance.append({
+                    "id": aid,
+                    "name": name,
+                    "total_predictions": total,
+                    "win_rate": round(accuracy * 100, 1),
+                    "win_count": wins,
+                    "settled_count": settled
+                })
+        
+        # 按胜率排序
+        performance.sort(key=lambda x: x["win_rate"], reverse=True)
+        return performance
+
     def backfill_result(self, record_id: int, actual_return: float):
         """
         回填 5 天后的实际表现并判定胜负。

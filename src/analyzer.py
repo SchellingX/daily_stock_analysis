@@ -491,6 +491,61 @@ class AnalysisResult:
         }
         return star_map.get(str(self.confidence_level or "").strip().lower(), "⭐⭐")
 
+    def get_radar_data(self) -> List[Dict[str, Any]]:
+        """
+        获取雷达图数据
+        
+        维度：技术面、基本面、情绪面、资金流、风险度
+        """
+        # 默认值
+        tech_score = 50
+        fund_score = 50
+        sent_score = self.sentiment_score
+        flow_score = 50
+        risk_score = 50
+
+        if self.dashboard:
+            # 1. 技术面 (如果有 trend_score 则用，否则基于 sentiment_score 微调)
+            dp = self.dashboard.get("data_perspective", {})
+            tech_score = dp.get("trend_status", {}).get("trend_score", 
+                                                      min(100, max(0, int(self.sentiment_score * 0.9 + 5))))
+            
+            # 2. 资金流 (基于量比简单推算)
+            vol_ratio = dp.get("volume_analysis", {}).get("volume_ratio", 1.0)
+            try:
+                vr = float(vol_ratio) if vol_ratio and vol_ratio != "N/A" else 1.0
+                flow_score = min(100, max(0, int(50 + (vr - 1.0) * 20)))
+            except (ValueError, TypeError):
+                flow_score = 50
+
+            # 3. 风险度 (100 - 风险项数量*10)
+            risks = self.dashboard.get("intelligence", {}).get("risk_alerts", [])
+            # 专家委员会的分歧也是风险
+            if self.dashboard.get("ensemble_reports"):
+                divergence = self.risk_warning or ""
+                if "分歧" in divergence or "争议" in divergence:
+                    risk_score = min(risk_score, 40)
+            risk_score = max(0, 100 - len(risks) * 10)
+
+            # 4. 基本面 (简单基于关键词或专家共识评分)
+            fund_analysis = (self.fundamental_analysis or "").lower()
+            if "增长" in fund_analysis or "优秀" in fund_analysis or "稳健" in fund_analysis:
+                fund_score = 75
+            elif "下滑" in fund_analysis or "亏损" in fund_analysis or "风险" in fund_analysis:
+                fund_score = 25
+            
+            # 如果是委员会模式，专家的一致性可以提升基本面信心
+            if self.dashboard.get("ensemble_reports"):
+                fund_score = max(fund_score, 60) # 委员会通常会关注基本面
+
+        return [
+            {"subject": "技术面", "value": tech_score, "fullMark": 100},
+            {"subject": "基本面", "value": fund_score, "fullMark": 100},
+            {"subject": "情绪面", "value": sent_score, "fullMark": 100},
+            {"subject": "资金流", "value": flow_score, "fullMark": 100},
+            {"subject": "风险度", "value": risk_score, "fullMark": 100},
+        ]
+
 
 class GeminiAnalyzer:
     """
