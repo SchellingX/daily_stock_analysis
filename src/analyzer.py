@@ -1119,6 +1119,90 @@ class GeminiAnalyzer:
 
         return response_text, usage
 
+    def _call_gemini_cli_headless(
+        self,
+        prompt: str,
+        system_prompt: str,
+        model: str,
+        timeout: int = 120
+    ) -> Tuple[str, str, Dict[str, Any]]:
+        """
+        Invoke gemini-cli in headless mode via subprocess.
+        
+        Args:
+            prompt: User message.
+            system_prompt: System instructions.
+            model: Full model name (e.g., gemini-cli/gemini-2.0-flash).
+            timeout: Command timeout in seconds.
+            
+        Returns:
+            Tuple of (response text, model_used, usage).
+        """
+        import subprocess
+        import os
+        
+        # 提取真实模型名（如果前缀后有内容）
+        actual_model = model.split("/")[-1] if "/" in model else model
+        if actual_model == "gemini-cli":
+             # 如果只写了 gemini-cli，默认使用 2.0-flash
+            actual_model = "gemini-2.0-flash"
+            
+        # 构造 Stdin 内容：将 System Prompt 和 User Prompt 结合
+        # 推荐结构：[System Context]\n\n[User Request]
+        stdin_content = f"{system_prompt}\n\n--- CONTEXT DATA ---\n\n{prompt}"
+        
+        # 构造命令：-p 为强制无头模式标志
+        # 注意：此处不使用 --output-format json 以获取纯净文本
+        cmd = ["gemini", "-p", "根据前文数据和指令生成回复。"]
+        
+        # 继承当前环境（包含 GEMINI_API_KEY, https_proxy 等）
+        env = os.environ.copy()
+        
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(f"[GeminiCLI] Calling {actual_model} via subprocess...")
+        try:
+            res = subprocess.run(
+                cmd,
+                input=stdin_content,
+                capture_output=True,
+                text=True,
+                encoding='utf-8',
+                env=env,
+                timeout=timeout
+            )
+            
+            if res.returncode != 0:
+                stderr = res.stderr.lower()
+                if "429" in stderr or "rate limit" in stderr:
+                    raise Exception(f"Gemini CLI Rate Limit (429): {res.stderr}")
+                raise Exception(f"Gemini CLI Error (exit {res.returncode}): {res.stderr}")
+            
+            output = res.stdout.strip()
+            
+            # 清洗反引号 (Markdown 兼容性处理)
+            content = output
+            if "```json" in content:
+                content = content.split("```json")[1].split("```")[0].strip()
+            elif "```" in content:
+                content = content.split("```")[1].split("```")[0].strip()
+                
+            # 由于通过 CLI 获取不到准确 Token，返回空 usage 或估算值
+            usage = {
+                "prompt_tokens": 0,
+                "completion_tokens": 0,
+                "total_tokens": 0,
+                "via_cli": True
+            }
+            
+            return content, f"gemini-cli/{actual_model}", usage
+            
+        except subprocess.TimeoutExpired:
+            raise Exception(f"Gemini CLI request timed out after {timeout}s")
+        except Exception as e:
+            logger.error(f"[GeminiCLI] Call failed: {e}")
+            raise
+
     def _call_litellm(
         self,
         prompt: str,
