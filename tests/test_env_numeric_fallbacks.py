@@ -72,6 +72,17 @@ class EnvNumericFallbacksTestCase(unittest.TestCase):
         )
         self.assertEqual(output.splitlines()[-1], "30")
 
+    def test_zero_efinance_timeout_clamps_to_one_second(self) -> None:
+        output = self._run_python(
+            """
+            import importlib
+            module = importlib.import_module("data_provider.efinance_fetcher")
+            print(module._EF_CALL_TIMEOUT)
+            """,
+            EFINANCE_CALL_TIMEOUT="0",
+        )
+        self.assertEqual(output.splitlines()[-1], "1")
+
     @patch("src.logging_config.setup_logging")
     @patch("src.config.setup_env")
     @patch("uvicorn.run")

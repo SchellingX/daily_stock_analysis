@@ -55,7 +55,7 @@ _EF_CALL_TIMEOUT = parse_env_int(
     os.environ.get("EFINANCE_CALL_TIMEOUT"),
     30,
     field_name="EFINANCE_CALL_TIMEOUT",
-    minimum=0,
+    minimum=1,
 )
 
 
