@@ -33,7 +33,7 @@ from tenacity import (
 
 from .base import BaseFetcher, DataFetchError, RateLimitError, STANDARD_COLUMNS,is_bse_code, is_st_stock, is_kc_cy_stock, normalize_stock_code, _is_hk_market
 from .realtime_types import UnifiedRealtimeQuote, ChipDistribution
-from src.config import get_config
+from src.config import get_config, parse_env_int
 import os
 from zoneinfo import ZoneInfo
 
@@ -128,7 +128,7 @@ class TushareFetcher(BaseFetcher):
     """
     
     name = "TushareFetcher"
-    priority = int(os.getenv("TUSHARE_PRIORITY", "2"))  # 默认优先级，会在 __init__ 中根据配置动态调整
+    priority = parse_env_int(os.getenv("TUSHARE_PRIORITY"), 2, field_name="TUSHARE_PRIORITY")  # 默认优先级，会在 __init__ 中根据配置动态调整
 
     def __init__(self, rate_limit_per_minute: int = 80):
         """

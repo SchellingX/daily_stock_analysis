@@ -27,9 +27,17 @@ def main() -> int:
     """
     启动 Web 服务
     """
+    from src.config import parse_env_int
+
     # 兼容旧版环境变量名
     host = os.getenv("WEBUI_HOST", os.getenv("API_HOST", "127.0.0.1"))
-    port = int(os.getenv("WEBUI_PORT", os.getenv("API_PORT", "8000")))
+    port = parse_env_int(
+        os.getenv("WEBUI_PORT", os.getenv("API_PORT")),
+        8000,
+        field_name="WEBUI_PORT",
+        minimum=1,
+        maximum=65535,
+    )
 
     print(f"正在启动 Web 服务: http://{host}:{port}")
     print(f"API 文档: http://{host}:{port}/docs")

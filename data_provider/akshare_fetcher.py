@@ -42,7 +42,7 @@ from tenacity import (
 )
 
 from patch.eastmoney_patch import eastmoney_patch
-from src.config import get_config
+from src.config import get_config, parse_env_int
 from .base import BaseFetcher, DataFetchError, RateLimitError, STANDARD_COLUMNS, is_bse_code, is_st_stock, is_kc_cy_stock, normalize_stock_code
 from .realtime_types import (
     UnifiedRealtimeQuote, ChipDistribution, RealtimeSource,
@@ -265,7 +265,7 @@ class AkshareFetcher(BaseFetcher):
     """
     
     name = "AkshareFetcher"
-    priority = int(os.getenv("AKSHARE_PRIORITY", "1"))
+    priority = parse_env_int(os.getenv("AKSHARE_PRIORITY"), 1, field_name="AKSHARE_PRIORITY")
     
     def __init__(self, sleep_min: float = 2.0, sleep_max: float = 5.0):
         """

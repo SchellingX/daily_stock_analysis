@@ -31,6 +31,7 @@ from tenacity import (
 
 from .base import BaseFetcher, DataFetchError, STANDARD_COLUMNS, is_bse_code, _is_hk_market
 import os
+from src.config import parse_env_int
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +67,7 @@ class BaostockFetcher(BaseFetcher):
     """
     
     name = "BaostockFetcher"
-    priority = int(os.getenv("BAOSTOCK_PRIORITY", "3"))
+    priority = parse_env_int(os.getenv("BAOSTOCK_PRIORITY"), 3, field_name="BAOSTOCK_PRIORITY")
     
     def __init__(self):
         """初始化 BaostockFetcher"""

@@ -31,7 +31,7 @@ from src.auth import (
     verify_stored_password,
     verify_session,
 )
-from src.config import Config, setup_env
+from src.config import Config, parse_env_int, setup_env
 from src.core.config_manager import ConfigManager
 
 logger = logging.getLogger(__name__)
@@ -79,10 +79,11 @@ def _cookie_params(request: Request) -> dict:
         # Check URL scheme when not behind proxy
         secure = request.url.scheme == "https"
 
-    try:
-        max_age_hours = int(os.getenv("ADMIN_SESSION_MAX_AGE_HOURS", str(SESSION_MAX_AGE_HOURS_DEFAULT)))
-    except ValueError:
-        max_age_hours = SESSION_MAX_AGE_HOURS_DEFAULT
+    max_age_hours = parse_env_int(
+        os.getenv("ADMIN_SESSION_MAX_AGE_HOURS"),
+        SESSION_MAX_AGE_HOURS_DEFAULT,
+        field_name="ADMIN_SESSION_MAX_AGE_HOURS",
+    )
     max_age = max_age_hours * 3600
 
     return {

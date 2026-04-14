@@ -49,6 +49,7 @@ except (ImportError, ModuleNotFoundError):
         return bool(n and n.upper() != str(stock_code).strip().upper())
 
 import os
+from src.config import parse_env_int
 
 logger = logging.getLogger(__name__)
 
@@ -72,7 +73,7 @@ class YfinanceFetcher(BaseFetcher):
     """
 
     name = "YfinanceFetcher"
-    priority = int(os.getenv("YFINANCE_PRIORITY", "4"))
+    priority = parse_env_int(os.getenv("YFINANCE_PRIORITY"), 4, field_name="YFINANCE_PRIORITY")
 
     def __init__(self):
         """初始化 YfinanceFetcher"""
