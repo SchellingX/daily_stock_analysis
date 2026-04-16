@@ -772,7 +772,7 @@ def main() -> int:
         if args.host == '0.0.0.0' and os.getenv('WEBUI_HOST'):
             args.host = os.getenv('WEBUI_HOST')
         if args.port == 8000 and os.getenv('WEBUI_PORT'):
-            args.port = int(os.getenv('WEBUI_PORT'))
+            args.port = config.webui_port
 
     bot_clients_started = False
     if start_serve:

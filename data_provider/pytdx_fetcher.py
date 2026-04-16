@@ -30,6 +30,7 @@ from tenacity import (
 
 from .base import BaseFetcher, DataFetchError, STANDARD_COLUMNS, is_bse_code, _is_hk_market
 import os
+from src.config import parse_env_int
 
 logger = logging.getLogger(__name__)
 
@@ -104,7 +105,7 @@ class PytdxFetcher(BaseFetcher):
     """
     
     name = "PytdxFetcher"
-    priority = int(os.getenv("PYTDX_PRIORITY", "2"))
+    priority = parse_env_int(os.getenv("PYTDX_PRIORITY"), 2, field_name="PYTDX_PRIORITY")
     
     # 默认通达信行情服务器列表
     DEFAULT_HOSTS = [

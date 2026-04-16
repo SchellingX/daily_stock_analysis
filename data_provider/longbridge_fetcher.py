@@ -29,6 +29,7 @@ from typing import Optional, Dict, Any
 
 import pandas as pd
 
+from src.config import parse_env_int
 from .base import BaseFetcher, STANDARD_COLUMNS
 from .realtime_types import UnifiedRealtimeQuote, RealtimeSource, safe_float
 from .us_index_mapping import is_us_stock_code, is_us_index_code
@@ -262,7 +263,7 @@ class LongbridgeFetcher(BaseFetcher):
     """
 
     name = "LongbridgeFetcher"
-    priority = int(os.getenv("LONGBRIDGE_PRIORITY", "5"))
+    priority = parse_env_int(os.getenv("LONGBRIDGE_PRIORITY"), 5, field_name="LONGBRIDGE_PRIORITY")
 
     _CONNECTION_ERRORS = ("client is closed", "context closed", "connection closed")
 

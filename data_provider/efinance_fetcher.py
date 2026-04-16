@@ -40,24 +40,22 @@ from tenacity import (
     before_sleep_log,
 )
 
-# Timeout (seconds) for efinance library calls that go through eastmoney APIs
-# with no built-in timeout.  Prevents indefinite hangs when hosts are unreachable.
-try:
-    _EF_CALL_TIMEOUT = int(os.environ.get("EFINANCE_CALL_TIMEOUT", "30"))
-except (ValueError, TypeError):
-    import logging as _logging
-    _logging.getLogger(__name__).warning(
-        "EFINANCE_CALL_TIMEOUT is not a valid integer, using default 30s"
-    )
-    _EF_CALL_TIMEOUT = 30
-
 from patch.eastmoney_patch import eastmoney_patch
-from src.config import get_config
+from src.config import get_config, parse_env_int
 from .base import BaseFetcher, DataFetchError, RateLimitError, STANDARD_COLUMNS,is_bse_code, is_st_stock, is_kc_cy_stock, normalize_stock_code
 from .realtime_types import (
     UnifiedRealtimeQuote, RealtimeSource,
     get_realtime_circuit_breaker,
     safe_float, safe_int  # 使用统一的类型转换函数
+)
+
+# Timeout (seconds) for efinance library calls that go through eastmoney APIs
+# with no built-in timeout. Prevents indefinite hangs when hosts are unreachable.
+_EF_CALL_TIMEOUT = parse_env_int(
+    os.environ.get("EFINANCE_CALL_TIMEOUT"),
+    30,
+    field_name="EFINANCE_CALL_TIMEOUT",
+    minimum=1,
 )
 
 
@@ -253,7 +251,7 @@ class EfinanceFetcher(BaseFetcher):
     """
     
     name = "EfinanceFetcher"
-    priority = int(os.getenv("EFINANCE_PRIORITY", "0"))  # 最高优先级，排在 AkshareFetcher 之前
+    priority = parse_env_int(os.getenv("EFINANCE_PRIORITY"), 0, field_name="EFINANCE_PRIORITY")  # 最高优先级，排在 AkshareFetcher 之前
     
     def __init__(self, sleep_min: float = 1.5, sleep_max: float = 3.0):
         """

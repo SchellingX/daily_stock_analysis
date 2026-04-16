@@ -21,6 +21,7 @@ from pathlib import Path
 from typing import Optional, Tuple
 
 from dotenv import dotenv_values
+from src.config import parse_env_int
 
 logger = logging.getLogger(__name__)
 
@@ -358,10 +359,11 @@ def verify_session(value: str) -> bool:
         ts = int(ts_str)
     except ValueError:
         return False
-    try:
-        max_age_hours = int(os.getenv("ADMIN_SESSION_MAX_AGE_HOURS", str(SESSION_MAX_AGE_HOURS_DEFAULT)))
-    except ValueError:
-        max_age_hours = SESSION_MAX_AGE_HOURS_DEFAULT
+    max_age_hours = parse_env_int(
+        os.getenv("ADMIN_SESSION_MAX_AGE_HOURS"),
+        SESSION_MAX_AGE_HOURS_DEFAULT,
+        field_name="ADMIN_SESSION_MAX_AGE_HOURS",
+    )
     if time.time() - ts > max_age_hours * 3600:
         return False
     return True
